@@ -1,6 +1,8 @@
 export LAMBDA_NAME=cloudacademy-calc-pi
 export LAMBDA_REGION=us-west-2
 
+SHELL = bash
+
 .DEFAULT_GOAL := all
 
 build:
