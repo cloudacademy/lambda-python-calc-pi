@@ -1,4 +1,4 @@
-export LAMBDA_NAME=calcadd-python
+export LAMBDA_NAME=cloudacademy-calc-pi
 export LAMBDA_REGION=us-west-2
 
 .DEFAULT_GOAL := all
