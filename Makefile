@@ -22,7 +22,7 @@ deploy:
 		| jq ".LastUpdateStatusReason" -r
 	aws lambda update-function-configuration \
 		--function-name "${LAMBDA_NAME}" \
-		--environment '{"Variables":{"SQS_QUEUE_URL":"https://sqs.us-west-2.amazonaws.com/379242798045/calc.fifo"}}' >/dev/null
+		--environment '{"Variables":{"S3_BUCKET_NAME":"TOKEN_S3_BUCKET_NAME"}}' >/dev/null
 	aws lambda wait function-updated \
 		--function-name "${LAMBDA_NAME}" \
 		--region="${LAMBDA_REGION}"
