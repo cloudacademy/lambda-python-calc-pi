@@ -22,7 +22,11 @@ deploy:
 		| jq ".LastUpdateStatusReason" -r
 	aws lambda update-function-configuration \
 		--function-name "${LAMBDA_NAME}" \
-		--environment '{"Variables":{"S3_BUCKET_NAME":"TOKEN_S3_BUCKET_NAME"}}' >/dev/null
+		--environment '{"Variables":{"S3_BUCKET_NAME":"TOKEN_S3_BUCKET_NAME"}}' \
+		--tracing-config 'Mode=Active' >/dev/null
+  	aws lambda create-function-url-config \
+		--function-name "${LAMBDA_NAME}" \
+		--auth-type "NONE"
 	aws lambda wait function-updated \
 		--function-name "${LAMBDA_NAME}" \
 		--region="${LAMBDA_REGION}"
