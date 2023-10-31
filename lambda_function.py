@@ -26,10 +26,9 @@ def lambda_handler(event, context):
     logging.info('calculates pi to n decimal places...')
 
     num = event["queryStringParameters"]['num']
-    calcid = event["queryStringParameters"]['calcid']
 
-    subsegment = xray_recorder.begin_subsegment('add_service')
-    subsegment.put_annotation('calcid', calcid)
+    subsegment = xray_recorder.begin_subsegment('pi')
+    subsegment.put_annotation('num', num)
 
     pi = 0
 

@@ -26,13 +26,16 @@ deploy:
 	aws lambda wait function-updated \
 		--function-name "${LAMBDA_NAME}" \
 		--region="${LAMBDA_REGION}"
-	@echo "The function has been deloyed."
+	@echo "The function has been deployed."
 
 run:
 	aws lambda invoke \
 		--function-name "${LAMBDA_NAME}" \
-		--region="${LAMBDA_REGION}" out \
+		--region="${LAMBDA_REGION}" \
+		--cli-binary-format raw-in-base64-out \
+		--payload '{"queryStringParameters": {"num": "100"}}' \
 		--log-type Tail \
+		out \
 		| jq ".LogResult" -r | base64 -d
 
 all:
