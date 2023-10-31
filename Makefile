@@ -24,7 +24,7 @@ deploy:
 		--function-name "${LAMBDA_NAME}" \
 		--environment '{"Variables":{"S3_BUCKET_NAME":"TOKEN_S3_BUCKET_NAME"}}' \
 		--tracing-config 'Mode=Active' >/dev/null
-  	aws lambda create-function-url-config \
+	aws lambda create-function-url-config \
 		--function-name "${LAMBDA_NAME}" \
 		--auth-type "NONE"
 	aws lambda wait function-updated \
