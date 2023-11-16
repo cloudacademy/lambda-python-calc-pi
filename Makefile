@@ -1,6 +1,7 @@
 export LAMBDA_NAME=cloudacademy-calc-pi
 export LAMBDA_REGION=us-west-2
 export IAM_ROLE_ARN=TOKEN_IAM_ROLE_ARN
+export S3_BUCKET_NAME=TOKEN_S3_BUCKET_NAME
 
 SHELL = bash
 
@@ -22,12 +23,17 @@ deploy:
 		--zip-file fileb://function.zip \
 		--handler lambda_function.lambda_handler \
 		--role "${IAM_ROLE_ARN}" \
-		--environment '{"Variables":{"S3_BUCKET_NAME":"TOKEN_S3_BUCKET_NAME"}}' \
+		--environment '{"Variables":{"S3_BUCKET_NAME":"${S3_BUCKET_NAME}"}}' \
 		--tracing-config 'Mode=Active' \
-		--region "${LAMBDA_REGION}"
+		--region "${LAMBDA_REGION}" \
+		| jq ".LastUpdateStatusReason" -r
 	aws lambda create-function-url-config \
 		--function-name "${LAMBDA_NAME}" \
 		--auth-type "NONE"
+	aws lambda add-permission \
+		--function-name "${LAMBDA_NAME}" \
+		--action lambda:InvokeFunction \
+		--principal "*"
 	aws lambda wait function-updated \
 		--function-name "${LAMBDA_NAME}" \
 		--region="${LAMBDA_REGION}"
