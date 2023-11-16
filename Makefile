@@ -13,10 +13,10 @@ build:
 		--target=./package \
 		--implementation cp \
 		--only-binary=:all: --upgrade
-
-deploy:
 	pushd ./package && zip -r ../function.zip ./ && popd
 	zip function.zip lambda_function.py
+
+deploy:
 	aws lambda create-function \
 		--function-name "${LAMBDA_NAME}" \
 		--runtime python3.10 \
@@ -26,18 +26,25 @@ deploy:
 		--environment '{"Variables":{"S3_BUCKET_NAME":"${S3_BUCKET_NAME}"}}' \
 		--tracing-config 'Mode=Active' \
 		--region "${LAMBDA_REGION}" \
-		| jq ".LastUpdateStatusReason" -r
+		| jq -r ".State"
+	aws lambda wait function-active \
+		--function-name "${LAMBDA_NAME}" \
+		--region="${LAMBDA_REGION}"
+	@echo "lambda function is active..."
 	aws lambda create-function-url-config \
 		--function-name "${LAMBDA_NAME}" \
-		--auth-type "NONE"
+		--auth-type "NONE" \
+		| jq -r ".FunctionUrl"
 	aws lambda add-permission \
 		--function-name "${LAMBDA_NAME}" \
-		--action lambda:InvokeFunction \
-		--principal "*"
+		--action lambda:InvokeFunctionUrl \
+		--principal "*" \
+		--statement-id "${LAMBDA_NAME}" \
+		--function-url-auth-type "NONE"
 	aws lambda wait function-updated \
 		--function-name "${LAMBDA_NAME}" \
 		--region="${LAMBDA_REGION}"
-	@echo "The function has been deployed."
+	@echo "lambda function is ready..."
 
 run:
 	aws lambda invoke \
@@ -48,6 +55,13 @@ run:
 		--log-type Tail \
 		out \
 		| jq ".LogResult" -r | base64 -d
+
+delete:
+	aws lambda delete-function-url-config \
+		--function-name "${LAMBDA_NAME}"
+	aws lambda delete-function \
+		--function-name "${LAMBDA_NAME}"
+	@echo "lambda function is deleted..."
 
 all:
 	make build
