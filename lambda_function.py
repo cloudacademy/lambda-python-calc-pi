@@ -25,7 +25,7 @@ def lambda_handler(event, context):
 
     num = event["queryStringParameters"]['num']
 
-    subsegment = xray_recorder.begin_subsegment('pi')
+    subsegment = xray_recorder.begin_subsegment('pi-calc')
     subsegment.put_annotation('num', num)
 
     pi = 0
@@ -39,6 +39,7 @@ def lambda_handler(event, context):
 
     subsegment.put_metadata("num", num)
     subsegment.put_metadata("pi", pi)
+    xray_recorder.end_subsegment()
 
     response_code = 200
 
@@ -55,11 +56,17 @@ def lambda_handler(event, context):
         #RED
         response_code = 503
 
+    pi_wrapped = "\n".join(textwrap.wrap(pi,32))
+
+    subsegment = xray_recorder.begin_subsegment('s3-save')
+    subsegment.put_annotation('num', num)
+    subsegment.put_metadata("pi_wrapped", pi_wrapped)
+
     file_name = "pi.txt"
     s3_path = "data/" + file_name
 
     s3 = boto3.resource("s3")
-    s3.Bucket(s3_bucknet_name).put_object(Key=s3_path, Body="\n".join(textwrap.wrap(pi,32)).encode("utf-8"))
+    s3.Bucket(s3_bucknet_name).put_object(Key=s3_path, Body=pi_wrapped.encode("utf-8"))
 
     xray_recorder.end_subsegment()
     xray_recorder.end_segment()
