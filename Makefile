@@ -1,5 +1,6 @@
 export LAMBDA_NAME=cloudacademy-calc-pi
 export LAMBDA_REGION=us-west-2
+export IAM_ROLE_ARN=TOKEN_IAM_ROLE_ARN
 
 SHELL = bash
 
@@ -15,15 +16,15 @@ build:
 deploy:
 	pushd ./package && zip -r ../function.zip ./ && popd
 	zip function.zip lambda_function.py
-	aws lambda update-function-code \
+	aws lambda create-function \
 		--function-name "${LAMBDA_NAME}" \
+		--runtime python3.10 \
 		--zip-file fileb://function.zip \
-		--region="${LAMBDA_REGION}" \
-		| jq ".LastUpdateStatusReason" -r
-	aws lambda update-function-configuration \
-		--function-name "${LAMBDA_NAME}" \
+		--handler lambda_function.lambda_handler \
+		--role "${IAM_ROLE_ARN}" \
 		--environment '{"Variables":{"S3_BUCKET_NAME":"TOKEN_S3_BUCKET_NAME"}}' \
-		--tracing-config 'Mode=Active' >/dev/null
+		--tracing-config 'Mode=Active' \
+		--region "${LAMBDA_REGION}"
 	aws lambda create-function-url-config \
 		--function-name "${LAMBDA_NAME}" \
 		--auth-type "NONE"
