@@ -3,6 +3,7 @@ import boto3
 import logging
 import os
 import random
+import textwrap
 
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch
@@ -12,9 +13,6 @@ patch(libraries)
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-#sqs_queue_url = os.environ.get("SQS_QUEUE_URL", "unknown")
-#sqs_queue_url = 'https://sqs.us-west-2.amazonaws.com/379242798045/calc.fifo'
 
 s3_bucknet_name = os.environ.get("S3_BUCKET_NAME", "unknown")
 
@@ -57,13 +55,11 @@ def lambda_handler(event, context):
         #RED
         response_code = 503
 
-    encoded_string = pi.encode("utf-8")
-
     file_name = "pi.txt"
     s3_path = "data/" + file_name
 
     s3 = boto3.resource("s3")
-    s3.Bucket(s3_bucknet_name).put_object(Key=s3_path, Body=encoded_string)
+    s3.Bucket(s3_bucknet_name).put_object(Key=s3_path, Body="\n".join(textwrap.wrap(pi,32)).encode("utf-8"))
 
     xray_recorder.end_subsegment()
     xray_recorder.end_segment()

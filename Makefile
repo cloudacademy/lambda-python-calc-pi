@@ -27,6 +27,7 @@ deploy:
 		--tracing-config 'Mode=Active' \
 		--region "${LAMBDA_REGION}" \
 		| jq -r ".State"
+	@echo "lambda function created..."
 	aws lambda wait function-active \
 		--function-name "${LAMBDA_NAME}" \
 		--region="${LAMBDA_REGION}"
