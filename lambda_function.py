@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import textwrap
+import time
 
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch
@@ -34,6 +35,7 @@ def lambda_handler(event, context):
         if num:
             digits = [str(n) for n in list(pi_digits(int(num)))]
             pi = "%s.%s\n" % (digits.pop(0), "".join(digits))
+            time.sleep(10) #simulate long running task
     except:
         pass
 

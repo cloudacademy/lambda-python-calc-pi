@@ -20,6 +20,7 @@ deploy:
 	aws lambda create-function \
 		--function-name "${LAMBDA_NAME}" \
 		--runtime python3.10 \
+		--timeout 60 \
 		--zip-file fileb://function.zip \
 		--handler lambda_function.lambda_handler \
 		--role "${IAM_ROLE_ARN}" \
@@ -47,6 +48,26 @@ deploy:
 		--region="${LAMBDA_REGION}"
 	@echo "lambda function is ready..."
 
+update:
+	pushd ./package && zip -r ../function.zip ./ && popd
+	zip function.zip lambda_function.py
+	aws lambda update-function-code \
+		--function-name "${LAMBDA_NAME}" \
+		--zip-file fileb://function.zip \
+		--region="${LAMBDA_REGION}" \
+		| jq -r ".LastUpdateStatusReason"
+	aws lambda wait function-updated \
+		--function-name "${LAMBDA_NAME}" \
+		--region="${LAMBDA_REGION}"
+	@echo "lambda function updated..."
+
+delete:
+	aws lambda delete-function-url-config \
+		--function-name "${LAMBDA_NAME}"
+	aws lambda delete-function \
+		--function-name "${LAMBDA_NAME}"
+	@echo "lambda function is deleted..."
+
 run:
 	aws lambda invoke \
 		--function-name "${LAMBDA_NAME}" \
@@ -56,13 +77,6 @@ run:
 		--log-type Tail \
 		out \
 		| jq ".LogResult" -r | base64 -d
-
-delete:
-	aws lambda delete-function-url-config \
-		--function-name "${LAMBDA_NAME}"
-	aws lambda delete-function \
-		--function-name "${LAMBDA_NAME}"
-	@echo "lambda function is deleted..."
 
 all:
 	make build
