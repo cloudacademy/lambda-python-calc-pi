@@ -15,9 +15,10 @@ libs: requirements.txt
 		--implementation cp \
 		--only-binary=:all: --upgrade
 
-release.zip: libs
+release.zip: libs lambda_function.py
+	rm release.zip || true
 	zip -r $@ *.py
-	cd $< && zip -rm ../$@ *
+	cd $< && zip -r ../$@ *
 
 .PHONY: deploy
 deploy: release.zip
@@ -53,7 +54,7 @@ deploy: release.zip
 	@echo "lambda function is ready..."
 
 .PHONY: update
-update:
+update: release.zip
 	aws lambda update-function-code \
 		--function-name "${LAMBDA_NAME}" \
 		--zip-file fileb://function.zip \
@@ -87,7 +88,6 @@ invoke:
 .PHONY: clean
 clean:
 	rm release.zip
-	rmdir libs
 
 .PHONY: all
 all: libs release.zip deploy invoke
