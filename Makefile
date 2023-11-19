@@ -7,21 +7,25 @@ SHELL = bash
 
 .DEFAULT_GOAL := all
 
-build:
-	pip3.10 install -r requirements.txt \
+libs: requirements.txt
+	@[ -d $@ ] || mkdir $@
+		pip3.10 install -r $< \
 		--platform manylinux2014_x86_64 \
-		--target=./package \
+		--target=$@ \
 		--implementation cp \
 		--only-binary=:all: --upgrade
-	pushd ./package && zip -r ../function.zip ./ && popd
-	zip function.zip lambda_function.py
 
-deploy:
+release.zip: libs
+	zip -r $@ *.py
+	cd $< && zip -rm ../$@ *
+
+.PHONY: deploy
+deploy: release.zip
 	aws lambda create-function \
 		--function-name "${LAMBDA_NAME}" \
 		--runtime python3.10 \
 		--timeout 60 \
-		--zip-file fileb://function.zip \
+		--zip-file fileb://$< \
 		--handler lambda_function.lambda_handler \
 		--role "${IAM_ROLE_ARN}" \
 		--environment '{"Variables":{"S3_BUCKET_NAME":"${S3_BUCKET_NAME}"}}' \
@@ -48,12 +52,12 @@ deploy:
 		--region="${LAMBDA_REGION}"
 	@echo "lambda function is ready..."
 
+.PHONY: update
 update:
-	pushd ./package && zip -r ../function.zip ./ && popd
-	zip function.zip lambda_function.py
 	aws lambda update-function-code \
 		--function-name "${LAMBDA_NAME}" \
 		--zip-file fileb://function.zip \
+		--zip-file fileb://$< \
 		--region="${LAMBDA_REGION}" \
 		| jq -r ".LastUpdateStatusReason"
 	aws lambda wait function-updated \
@@ -61,6 +65,7 @@ update:
 		--region="${LAMBDA_REGION}"
 	@echo "lambda function updated..."
 
+.PHONY: delete
 delete:
 	aws lambda delete-function-url-config \
 		--function-name "${LAMBDA_NAME}"
@@ -68,7 +73,8 @@ delete:
 		--function-name "${LAMBDA_NAME}"
 	@echo "lambda function is deleted..."
 
-run:
+.PHONY: invoke
+invoke:
 	aws lambda invoke \
 		--function-name "${LAMBDA_NAME}" \
 		--region="${LAMBDA_REGION}" \
@@ -78,7 +84,10 @@ run:
 		out \
 		| jq ".LogResult" -r | base64 -d
 
-all:
-	make build
-	make deploy
-	make run
+.PHONY: clean
+clean:
+	rm release.zip
+	rmdir libs
+
+.PHONY: all
+all: libs release.zip deploy invoke
