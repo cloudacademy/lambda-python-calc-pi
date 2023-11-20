@@ -7,17 +7,15 @@ import textwrap
 import time
 
 from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch
+from aws_xray_sdk.core import patch_all
 
-libraries = (['botocore'])
-patch(libraries)
+patch_all()
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 s3_bucknet_name = os.environ.get("S3_BUCKET_NAME")
 
-print(s3_bucknet_name)
 logger.info(f's3 bucket name: {s3_bucknet_name}')
 
 s3 = boto3.client('s3')
@@ -53,13 +51,15 @@ def lambda_handler(event, context):
     if random_error < 0.5:
         #GREEN
         response_code = 200
+        logger.info(f'http response code: {response_code}')
     elif random_error < 0.7:
         #ORANGE
         response_code = 403
+        logger.warning(f'http response code: {response_code}')
     else:
         #RED
         response_code = 503
-    logger.info(f'http response code: {response_code}')
+        logger.error(f'http response code: {response_code}')
 
     pi_wrapped = "\n".join(textwrap.wrap(pi,32))
 
