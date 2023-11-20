@@ -15,14 +15,15 @@ patch(libraries)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-s3_bucknet_name = os.environ.get("S3_BUCKET_NAME", "unknown")
+s3_bucknet_name = os.environ.get("S3_BUCKET_NAME")
 
 print(s3_bucknet_name)
+logger.info(f's3 bucket name: {s3_bucknet_name}')
 
 s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
-    logging.info('calculates pi to n decimal places...')
+    logger.info('calculates pi to n decimal places...')
 
     num = event["queryStringParameters"]['num']
 
@@ -35,6 +36,7 @@ def lambda_handler(event, context):
         if num:
             digits = [str(n) for n in list(pi_digits(int(num)))]
             pi = "%s.%s\n" % (digits.pop(0), "".join(digits))
+            logger.info(f'pi: {pi}')
             time.sleep(10) #simulate long running task
     except:
         pass
@@ -57,21 +59,25 @@ def lambda_handler(event, context):
     else:
         #RED
         response_code = 503
+    logger.info(f'http response code: {response_code}')
 
     pi_wrapped = "\n".join(textwrap.wrap(pi,32))
 
-    subsegment = xray_recorder.begin_subsegment('s3-save')
-    subsegment.put_annotation('num', num)
-    subsegment.put_metadata("pi_wrapped", pi_wrapped)
+    if s3_bucknet_name:
+        subsegment = xray_recorder.begin_subsegment('s3-save')
+        subsegment.put_annotation('num', num)
+        subsegment.put_metadata("pi_wrapped", pi_wrapped)
 
-    file_name = "pi.txt"
-    s3_path = "data/" + file_name
+        file_name = "pi.txt"
+        s3_path = "data/" + file_name
 
-    s3 = boto3.resource("s3")
-    s3.Bucket(s3_bucknet_name).put_object(Key=s3_path, Body=pi_wrapped.encode("utf-8"))
+        logger.info('saving pi to s3 bucket...')
+        s3 = boto3.resource("s3")
+        s3.Bucket(s3_bucknet_name).put_object(Key=s3_path, Body=pi_wrapped.encode("utf-8"))
 
-    xray_recorder.end_subsegment()
+        xray_recorder.end_subsegment()
 
+    logger.info('returning response...')
     return {
         "statusCode": response_code,
         "isBase64Encoded": False,
