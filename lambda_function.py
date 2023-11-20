@@ -23,23 +23,36 @@ s3 = boto3.client('s3')
 def lambda_handler(event, context):
     logger.info('calculates pi to n decimal places...')
 
-    num = event["queryStringParameters"]['num']
-
     subsegment = xray_recorder.begin_subsegment('pi-calc')
+
+    num = 1000
+    try:
+        num = int(event["queryStringParameters"]['num'])
+        logger.info(f'num: {num}')
+    except:
+        logger.warning('error parsing num from query string')
+        pass
+
     subsegment.put_annotation('num', num)
 
     pi = 0
 
     try:
-        if num:
-            digits = [str(n) for n in list(pi_digits(int(num)))]
-            pi = "%s.%s\n" % (digits.pop(0), "".join(digits))
-            logger.info(f'pi: {pi}')
-            time.sleep(10) #simulate long running task
+        digits = [str(n) for n in list(pi_digits(int(num)))]
+        pi = "%s.%s\n" % (digits.pop(0), "".join(digits))
+        logger.info(f'pi: {pi}')
+        time.sleep(10) #simulate long running task
     except:
-        pass
+        logger.error('error calculating pi')
+        return {
+            "statusCode": 503,
+            "isBase64Encoded": False,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": 0
+        }
 
-    subsegment.put_metadata("num", num)
     subsegment.put_metadata("pi", pi)
     xray_recorder.end_subsegment()
 
