@@ -71,7 +71,6 @@ def lambda_handler(event, context):
     s3.Bucket(s3_bucknet_name).put_object(Key=s3_path, Body=pi_wrapped.encode("utf-8"))
 
     xray_recorder.end_subsegment()
-    xray_recorder.end_segment()
 
     return {
         "statusCode": response_code,
@@ -80,7 +79,7 @@ def lambda_handler(event, context):
             "Content-Type": "application/json",
             "RandomError": random_error
         },
-        "body": pi
+        "body": pi_wrapped
     }
 
 def pi_digits(x):
