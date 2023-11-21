@@ -16,9 +16,8 @@ libs: requirements.txt
 		--only-binary=:all: --upgrade
 
 release.zip: libs lambda_function.py
-	rm release.zip || true
-	zip -r $@ *.py
-	cd $< && zip -r ../$@ *
+	zip -rq $@ *.py
+	cd $< && zip -rq ../$@ *
 
 .PHONY: deploy
 deploy: release.zip
@@ -68,9 +67,9 @@ update: release.zip
 
 .PHONY: delete
 delete:
-	aws lambda delete-function-url-config \
+	-aws lambda delete-function-url-config \
 		--function-name "${LAMBDA_NAME}"
-	aws lambda delete-function \
+	-aws lambda delete-function \
 		--function-name "${LAMBDA_NAME}"
 	@echo "lambda function is deleted..."
 
