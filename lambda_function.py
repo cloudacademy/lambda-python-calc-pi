@@ -2,7 +2,6 @@ import json
 import boto3
 import logging
 import os
-import random
 import textwrap
 import time
 
@@ -56,24 +55,6 @@ def lambda_handler(event, context):
     subsegment.put_metadata("pi", pi)
     xray_recorder.end_subsegment()
 
-    response_code = 200
-
-    #randomize response code
-    random_error = random.uniform(0, 1)
-
-    if random_error < 0.5:
-        #GREEN
-        response_code = 200
-        logger.info(f'http response code: {response_code}')
-    elif random_error < 0.7:
-        #ORANGE
-        response_code = 403
-        logger.warning(f'http response code: {response_code}')
-    else:
-        #RED
-        response_code = 503
-        logger.error(f'http response code: {response_code}')
-
     pi_wrapped = "\n".join(textwrap.wrap(pi,32))
 
     if s3_bucknet_name:
@@ -92,11 +73,10 @@ def lambda_handler(event, context):
 
     logger.info('returning response...')
     return {
-        "statusCode": response_code,
+        "statusCode": 200,
         "isBase64Encoded": False,
         "headers": {
-            "Content-Type": "application/json",
-            "RandomError": random_error
+            "Content-Type": "application/json"
         },
         "body": pi_wrapped
     }
