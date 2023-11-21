@@ -23,7 +23,7 @@ jobs:
 
       - name: Package Source
         run: |
-          tar -czf release-${{ env.RELEASE_VERSION }}.tar.gz lambda_function.py requirements.txt Makefile
+          tar -czf release-${{ env.RELEASE_VERSION }}.tar.gz lambda_function.py requirements.txt makefile
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
