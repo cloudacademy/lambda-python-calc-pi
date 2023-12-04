@@ -56,7 +56,6 @@ deploy: release.zip
 update: release.zip
 	aws lambda update-function-code \
 		--function-name "${LAMBDA_NAME}" \
-		--zip-file fileb://function.zip \
 		--zip-file fileb://$< \
 		--region="${LAMBDA_REGION}" \
 		| jq -r ".LastUpdateStatusReason"
